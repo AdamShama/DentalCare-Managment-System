@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport
+    xmlns="http://jasperreports.sourceforge.net/jasperreports"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+      http://jasperreports.sourceforge.net/jasperreports
+      http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+    name="treatment_progress"
+    pageWidth="595" pageHeight="842" columnWidth="515"
+    leftMargin="40" rightMargin="40" topMargin="50" bottomMargin="50"
+    whenNoDataType="AllSectionsNoDetail">
+
+  <!-- 1) Parameter -->
+  <parameter name="DentistParam" class="java.lang.Integer"/>
+
+  <!-- 2) SQL: now includes Appointments and the OR on Ap.Status -->
+  <queryString language="SQL"><![CDATA[
+  SELECT
+    P.PatientID      AS PatientID,
+    P.FullName       AS FullName,
+    TP.PlanID        AS PlanID,
+    TP.StartDate     AS StartDate,
+    A.NextDate       AS UpcomingDate,
+    T.Cost           AS UpcomingCost
+  FROM (
+    SELECT PlanID, MIN(AssignedDate) AS NextDate
+    FROM TreatmentPlanStaff
+    GROUP BY PlanID
+  ) A
+    INNER JOIN TreatmentPlans     TP ON TP.PlanID   = A.PlanID
+    INNER JOIN Patients           P  ON P.PatientID = TP.PatientID
+    INNER JOIN TreatmentPlanStaff TPS ON TPS.PlanID   = A.PlanID
+                                  AND TPS.AssignedDate = A.NextDate
+    INNER JOIN Treatments         T  ON T.TreatmentID = TPS.TreatmentID
+    INNER JOIN Appointments       Ap ON Ap.AppointmentID = T.AppointmentID
+
+  WHERE
+    Ap.StaffID = $P{DentistParam}
+    AND (
+         TP.PlanStatus = 'Active'
+      OR Ap.Status     = 'Scheduled'
+    )
+  ORDER BY
+    A.NextDate,
+    P.FullName
+]]></queryString>
+
+
+
+
+  <!-- 3) Fields -->
+  <field name="PatientID"    class="java.lang.Integer"/>
+  <field name="FullName"     class="java.lang.String"/>
+  <field name="PlanID"       class="java.lang.Integer"/>
+  <field name="StartDate"    class="java.util.Date"/>
+  <field name="UpcomingDate" class="java.util.Date"/>
+  <field name="UpcomingCost" class="java.lang.Integer"/>
+
+  <!-- 4) Title -->
+  <title>
+    <band height="50">
+      <staticText>
+        <reportElement x="0" y="10" width="515" height="30"/>
+        <textElement textAlignment="Center">
+          <font size="18" isBold="true"/>
+        </textElement>
+        <text><![CDATA[Treatment Progress Report]]></text>
+      </staticText>
+    </band>
+  </title>
+
+  <!-- 5) Header -->
+  <columnHeader>
+    <band height="25">
+      <staticText>
+        <reportElement x="0"   y="0" width="60"  height="25"/><textElement><font isBold="true"/></textElement>
+        <text><![CDATA[Patient ID]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="60"  y="0" width="140" height="25"/><textElement><font isBold="true"/></textElement>
+        <text><![CDATA[Patient Name]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="200" y="0" width="60"  height="25"/><textElement><font isBold="true"/></textElement>
+        <text><![CDATA[Plan ID]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="260" y="0" width="90"  height="25"/><textElement><font isBold="true"/></textElement>
+        <text><![CDATA[Start Date]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="350" y="0" width="130" height="25"/><textElement><font isBold="true"/></textElement>
+        <text><![CDATA[Upcoming Date]]></text>
+      </staticText>
+      <staticText>
+        <reportElement x="480" y="0" width="55"  height="25"/><textElement><font isBold="true"/></textElement>
+        <text><![CDATA[Cost]]></text>
+      </staticText>
+    </band>
+  </columnHeader>
+
+  <!-- 6) Details -->
+  <detail>
+    <band height="20">
+      <textField>
+        <reportElement x="0"   y="0" width="60"  height="20"/>
+        <textFieldExpression><![CDATA[$F{PatientID}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="60"  y="0" width="140" height="20"/>
+        <textFieldExpression><![CDATA[$F{FullName}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="200" y="0" width="60"  height="20"/>
+        <textFieldExpression><![CDATA[$F{PlanID}]]></textFieldExpression>
+      </textField>
+      <textField pattern="yyyy-MM-dd">
+        <reportElement x="260" y="0" width="90"  height="20"/>
+        <textFieldExpression><![CDATA[$F{StartDate}]]></textFieldExpression>
+      </textField>
+      <textField pattern="yyyy-MM-dd">
+        <reportElement x="350" y="0" width="130" height="20"/>
+        <textFieldExpression><![CDATA[$F{UpcomingDate}]]></textFieldExpression>
+      </textField>
+      <textField>
+        <reportElement x="480" y="0" width="55"  height="20"/>
+        <textFieldExpression><![CDATA[$F{UpcomingCost}]]></textFieldExpression>
+      </textField>
+    </band>
+  </detail>
+</jasperReport>
